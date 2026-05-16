@@ -189,12 +189,14 @@ body {
 .error-msg { color:#ff9988; font-size:13px; font-weight:700; min-height:18px; }
 
 /* ===== SETUP OVERLAY ===== */
-#setup-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.72);
-  display:flex; align-items:center; justify-content:center;
-  z-index:100; backdrop-filter:blur(3px);
-}
+#setup-overlay { display:none; }
 #setup-overlay.hidden { display:none; }
+#setup-panel {
+  background:linear-gradient(160deg,#5a9a10,#2a6000);
+  border:3px solid #c8ff40; border-radius:14px;
+  padding:14px 12px; text-align:center; width:100%;
+  box-shadow:0 6px 20px rgba(0,0,0,0.4);
+}
 .ov-box {
   background:linear-gradient(160deg,#6aaa20,#3a7000);
   border:3px solid #c8ff40; border-radius:14px;
@@ -204,11 +206,11 @@ body {
 }
 @keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
 .ov-title {
-  font-family:'Bangers',cursive; font-size:32px; color:#d8ff60;
-  text-shadow:2px 2px 0 #2a5000; margin-bottom:8px;
-  letter-spacing:2px;
+  font-family:'Bangers',cursive; font-size:18px; color:#d8ff60;
+  text-shadow:1px 1px 0 #2a5000; margin-bottom:6px;
+  letter-spacing:1px;
 }
-.ov-sub { color:#d0ffb0; font-size:13px; line-height:1.7; margin-bottom:14px; }
+.ov-sub { color:#d0ffb0; font-size:10px; line-height:1.6; margin-bottom:8px; }
 
 .type-btns { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; margin-bottom:12px; }
 .type-btn {
@@ -342,6 +344,27 @@ body {
       <img src="data:image/png;base64,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">
       <div id="yy-question">?</div>
     </div>
+    <!-- SETUP PANEL - shown during setup phase -->
+    <div id="setup-panel" style="display:none">
+      <div class="ov-title">🚩 Place Your Flag!</div>
+      <div class="ov-sub">Click your 3 starting rows on the board.<br>4×Rock | 4×Paper | 4×Scissors | 1×Flag | 1×Trap</div>
+      <div class="type-btns" style="flex-direction:column;gap:5px;">
+        <div style="display:flex;gap:5px;justify-content:center;">
+          <button class="type-btn t-rock sel" id="btn-rock" onclick="selType('rock')">🪨 Rock <span id="c-rock">(4)</span></button>
+          <button class="type-btn t-paper" id="btn-paper" onclick="selType('paper')">📄 Paper <span id="c-paper">(4)</span></button>
+        </div>
+        <div style="display:flex;gap:5px;justify-content:center;">
+          <button class="type-btn t-scissors" id="btn-scissors" onclick="selType('scissors')">✂️ Scissors <span id="c-scissors">(4)</span></button>
+        </div>
+        <div style="display:flex;gap:5px;justify-content:center;">
+          <button class="type-btn t-flag" id="btn-flag" onclick="selType('flag')">🚩 Flag <span id="c-flag">(1)</span></button>
+          <button class="type-btn t-trap" id="btn-trap" onclick="selType('trap')">💣 Trap <span id="c-trap">(1)</span></button>
+        </div>
+      </div>
+      <div id="setup-status" style="color:#b0ffb0;font-size:11px;margin:6px 0;">Placed: 0 / 14</div>
+      <button class="big-btn" id="setup-done-btn" onclick="submitSetup()" disabled>⚔ Ready!</button>
+    </div>
+
     <div class="info-panel">
       <div class="info-title">📊 Score</div>
       <div class="score-row"><span>🔵 You</span><span class="score-val" id="sc-me">0</span></div>
@@ -362,26 +385,8 @@ body {
   </div>
 </div>
 
-<!-- SETUP OVERLAY -->
-<div id="setup-overlay" class="hidden">
-  <div class="ov-box">
-    <div class="ov-title">🚩 Place Your Flag!</div>
-    <div class="ov-sub">
-      Place in your <strong>3 starting rows</strong>.<br>
-      Enemy types are hidden — strategy wins!<br>
-      <strong>4×Rock | 4×Paper | 4×Scissors | 1×Flag | 1×Trap</strong>
-    </div>
-    <div class="type-btns">
-      <button class="type-btn t-rock sel" id="btn-rock" onclick="selType('rock')">🪨 Rock <span id="c-rock">(4)</span></button>
-      <button class="type-btn t-paper" id="btn-paper" onclick="selType('paper')">📄 Paper <span id="c-paper">(4)</span></button>
-      <button class="type-btn t-scissors" id="btn-scissors" onclick="selType('scissors')">✂️ Scissors <span id="c-scissors">(4)</span></button>
-      <button class="type-btn t-flag" id="btn-flag" onclick="selType('flag')">🚩 Flag <span id="c-flag">(1)</span></button>
-      <button class="type-btn t-trap" id="btn-trap" onclick="selType('trap')">💣 Trap <span id="c-trap">(1)</span></button>
-    </div>
-    <div id="setup-status">Placed: 0 / 14</div>
-    <button class="big-btn" id="setup-done-btn" onclick="submitSetup()" disabled style="margin-top:8px">⚔ Ready!</button>
-  </div>
-</div>
+<!-- SETUP OVERLAY (unused now) -->
+<div id="setup-overlay" class="hidden"></div>
 
 <!-- BATTLE POPUP -->
 <div id="battle-popup" class="hidden">
@@ -539,11 +544,11 @@ socket.on("error",msg=>{document.getElementById("join-error").textContent=msg;})
 socket.on("game_start",()=>{
   document.getElementById("lobby").style.display="none";
   document.getElementById("game-root").style.display="flex";
-  document.getElementById("setup-overlay").classList.remove("hidden");
+  document.getElementById("setup-panel").style.display="block";
   gamePhase="setup";
   preloadRed();
   renderBoard();
-  setBoardStatus("Place Your Flag!");
+  setBoardStatus("Click your rows to place pieces!");
   startMusic();
 });
 socket.on("opponent_disconnected",()=>{alert("Opponent disconnected.");location.reload();});
@@ -586,7 +591,7 @@ socket.on("waiting_for_opponent",()=>{setBoardStatus("Waiting for opponent...");
 socket.on("board_state",({board,myTeam:mt})=>{myTeam=mt;localBoard=board;renderBoard();});
 socket.on("phase_play",({turn})=>{
   gamePhase="play";
-  document.getElementById("setup-overlay").classList.add("hidden");
+  document.getElementById("setup-panel").style.display="none";
   updateTurnUI(turn);
 });
 
@@ -687,12 +692,12 @@ socket.on("rematch_start",()=>{
   placingType="rock";totalPlaced=0;localPlacement=[];
   selectedCell=null;validMoves=[];validAttacks=[];
   gamePhase="setup";
-  document.getElementById("setup-overlay").classList.remove("hidden");
+  document.getElementById("setup-panel").style.display="block";
   document.getElementById("setup-done-btn").disabled=true;
   document.getElementById("setup-done-btn").textContent="⚔ Ready!";
   document.querySelectorAll(".type-btn").forEach(b=>b.classList.remove("sel"));
   document.getElementById("btn-rock").classList.add("sel");
-  updateSetupUI();renderBoard();setBoardStatus("Place Your Flag!");startMusic();
+  updateSetupUI();renderBoard();setBoardStatus("Click your rows to place pieces!");startMusic();
 });
 
 // ===== CHAT =====
