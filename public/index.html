@@ -44,12 +44,21 @@ body{background:#8dc43f;background-image:radial-gradient(ellipse at 50% 0%,#a8d8
 .piece{width:66px;height:66px;display:flex;align-items:center;justify-content:center;position:relative;z-index:1;user-select:none;cursor:pointer;}
 .piece img{width:60px;height:auto;filter:drop-shadow(1px 3px 2px rgba(0,0,0,0.4));transition:transform 0.1s;}
 .piece:hover img{transform:scale(1.08);}
-.piece-special{width:58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:24px;border:3px solid rgba(255,255,255,0.6);box-shadow:0 3px 8px rgba(0,0,0,0.4);transition:transform 0.1s;cursor:pointer;}
+.piece-special{
+  width:62px;height:62px;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+  position:relative;cursor:pointer;transition:transform 0.1s;
+}
 .piece-special:hover{transform:scale(1.08);}
-.piece-special.blue-flag{background:radial-gradient(circle at 35% 35%,#5588ff,#1133aa);}
-.piece-special.red-flag{background:radial-gradient(circle at 35% 35%,#ff5544,#aa1100);}
-.piece-special.blue-trap{background:radial-gradient(circle at 35% 35%,#aa55ff,#550088);}
-.piece-special.red-trap{background:radial-gradient(circle at 35% 35%,#ff8800,#884400);}
+.piece-special img{width:52px;height:auto;filter:drop-shadow(1px 3px 2px rgba(0,0,0,0.4));}
+.piece-special .ps-label{
+  position:absolute;top:0;right:0;
+  background:rgba(0,0,0,0.75);border-radius:50%;
+  width:22px;height:22px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;line-height:1;
+  border:1px solid rgba(255,255,255,0.5);
+}
 
 /* RIGHT PANEL */
 #right-panel{display:flex;flex-direction:column;align-items:center;gap:8px;width:175px;flex-shrink:0;}
@@ -123,7 +132,9 @@ body{background:#8dc43f;background-image:radial-gradient(ellipse at 50% 0%,#a8d8
   #board{grid-template-columns:repeat(7,44px);grid-template-rows:repeat(6,44px);}
   .cell,.piece{width:44px;height:44px;}
   .piece img{width:38px;}
-  .piece-special{width:38px;height:38px;font-size:18px;}
+  .piece-special{width:44px;height:44px;}
+  .piece-special img{width:36px;}
+  .piece-special .ps-label{width:16px;height:16px;font-size:10px;}
   #right-panel{width:130px;}
   #logo-box img,#yy-box img{width:125px;}
 }
@@ -586,7 +597,17 @@ function submitSetup(){
 socket.on("setup_confirmed",()=>setBoardStatus("Waiting for opponent..."));
 socket.on("waiting_for_opponent",()=>setBoardStatus("Waiting for opponent..."));
 socket.on("board_state",({board,myTeam:mt})=>{
-  myTeam=mt;localBoard=board;renderBoard();
+  myTeam=mt;
+  // During setup, keep our local placements visible
+  // Server board during setup only has our pieces (opponent hidden)
+  // Merge: use server board but re-apply our local setup pieces
+  if(gamePhase === "setup"){
+    // Just re-render local board (we built it ourselves)
+    renderBoard();
+    return;
+  }
+  localBoard=board;
+  renderBoard();
 });
 socket.on("phase_play",({turn})=>{
   gamePhase="play";
@@ -628,7 +649,15 @@ function calcMoves(r,c){
 function clearSel(){selectedCell=null;validMoves=[];validAttacks=[];renderBoard();}
 function sendMove(fr,fc,tr,tc){socket.emit("make_move",{code:roomCode,from:{r:fr,c:fc},to:{r:tr,c:tc}});}
 
-socket.on("move_result",({event,turn})=>{handleMoveEvent(event);updateTurnUI(turn);});
+socket.on("move_result",({event,turn})=>{
+  // Close tiebreak if it was open
+  if(gamePhase==="tie_break"){
+    gamePhase="play";
+    document.getElementById("tie-overlay").classList.add("hidden");
+  }
+  handleMoveEvent(event);
+  updateTurnUI(turn);
+});
 socket.on("turn_skipped",({skippedIdx})=>{
   playSound("turn_skipped_no_moves");
   addLog((skippedIdx===myIndex?"🔵 You":"🔴 Opponent")+" have no legal moves – turn skipped!");
@@ -681,8 +710,7 @@ function tieChoice(choice){
   socket.emit("tie_break_choice",{code:pendingTieCode,choice});
   document.getElementById("tie-waiting").style.display="block";
 }
-// After tiebreak resolves, move_result arrives and updates gamePhase back to play
-socket.on("move_result",()=>{ if(gamePhase==="tie_break"){gamePhase="play";document.getElementById("tie-overlay").classList.add("hidden");}});
+
 
 // ===== GAME OVER =====
 socket.on("game_over",({winner,reason,scores})=>{
@@ -720,7 +748,16 @@ function showBattle(att,def,attIsMe,result,aChoice,dChoice){
   const el=document.getElementById("battle-popup");el.classList.remove("hidden");
   function makeEl(type,team){
     if(type==="flag"||type==="trap"){
-      const d=document.createElement("div");d.className="piece-special "+team+"-"+type;d.textContent=type==="flag"?"🚩":"💣";return d;
+      const sp=document.createElement("div");
+      sp.style.cssText="position:relative;display:inline-block;";
+      const sImg=document.createElement("img");
+      sImg.style.width="46px";sImg.style.height="auto";
+      if(team==="blue")sImg.src=IMG_BLUE; else sImg.src=getRedSrc("rock");
+      const lbl=document.createElement("div");
+      lbl.style.cssText="position:absolute;top:0;right:0;background:rgba(0,0,0,0.75);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;";
+      lbl.textContent=type==="flag"?"🚩":"💣";
+      sp.appendChild(sImg);sp.appendChild(lbl);
+      return sp;
     }
     const img=document.createElement("img");img.style.width="46px";img.style.height="auto";
     if(team==="blue")img.src=IMG_BLUE;else img.src=getRedSrc(type);
@@ -767,7 +804,7 @@ socket.on("chat",({team,msg})=>{
 // ===== RENDER =====
 function renderBoard(){
   const el=document.getElementById("board");el.innerHTML="";
-  outer: for(let vr=0;vr<ROWS;vr++){
+  for(let vr=0;vr<ROWS;vr++){
     for(let vc=0;vc<COLS;vc++){
       // Red sees board flipped
       const r=myTeam==="red"?(ROWS-1-vr):vr;
@@ -782,24 +819,62 @@ function renderBoard(){
       const piece=localBoard[r]&&localBoard[r][c];
       if(piece){
         const isEnemy=piece.team!==myTeam;
+
         if(piece.type==="flag"||piece.type==="trap"){
+          // Flag and trap: soldier sprite + emoji overlay label
           const sp=document.createElement("div");
-          sp.className="piece-special "+piece.team+"-"+piece.type;
-          sp.textContent=piece.type==="flag"?"🚩":"💣";
-          if(isEnemy)sp.style.transform="scaleY(-1)";
+          sp.className="piece-special";
+          const sImg=document.createElement("img");
+          sImg.style.height="auto";
+          if(piece.team==="blue"){
+            sImg.style.width="52px";
+            sImg.src=IMG_BLUE;
+          } else {
+            sImg.style.width="52px";
+            sImg.src=getRedSrc("rock"); // red soldier base
+          }
+          const lbl=document.createElement("div");
+          lbl.className="ps-label";
+          lbl.textContent=piece.type==="flag"?"🚩":"💣";
+          sp.appendChild(sImg);
+          sp.appendChild(lbl);
+          if(isEnemy) sp.style.transform="scaleY(-1)";
           cell.appendChild(sp);
-          cell.addEventListener("click",()=>onCellClick(r,c));
-          el.appendChild(cell);
-          continue outer;
+        } else if(piece.type==="unknown"){
+          // Hidden enemy piece
+          const pw=document.createElement("div");pw.className="piece";
+          const img=document.createElement("img");
+          img.style.width="56px";img.style.height="auto";
+          img.style.opacity="0.45";
+          img.style.filter="grayscale(1) brightness(0.35)";
+          img.src=piece.team==="blue"?IMG_BLUE:(redCanvas.rock||IMG_RED_SPRITES);
+          img.style.transform="scaleY(-1)"; // always enemy so flip
+          pw.appendChild(img);cell.appendChild(pw);
+        } else {
+          // Known piece (own or revealed enemy)
+          const pw=document.createElement("div");pw.className="piece";
+          pw.style.position="relative";
+          const img=document.createElement("img");
+          img.style.height="auto";
+          if(piece.team==="blue"){
+            img.style.width="58px";
+            img.src=IMG_BLUE;
+            // Blue: show type label so player knows what each piece is
+            const lbl=document.createElement("div");
+            lbl.style.cssText="position:absolute;bottom:0;right:0;background:rgba(0,0,0,0.72);border-radius:4px;padding:1px 3px;font-size:11px;line-height:1.2;pointer-events:none;";
+            lbl.textContent=EMOJIS[piece.type]||"";
+            pw.appendChild(img);
+            pw.appendChild(lbl);
+          } else {
+            img.style.width="58px";
+            img.src=getRedSrc(piece.type);
+            pw.appendChild(img);
+          }
+          if(isEnemy) img.style.transform="scaleY(-1)";
+          cell.appendChild(pw);
         }
-        const pw=document.createElement("div");pw.className="piece";
-        const img=document.createElement("img");img.style.height="auto";
-        if(piece.type==="unknown"){img.style.width="56px";img.style.opacity="0.45";img.style.filter="grayscale(1) brightness(0.35)";img.src=piece.team==="blue"?IMG_BLUE:(redCanvas.rock||IMG_RED_SPRITES);}
-        else if(piece.team==="blue"){img.style.width="58px";img.src=IMG_BLUE;}
-        else{img.style.width="58px";img.src=getRedSrc(piece.type);}
-        if(isEnemy)img.style.transform="scaleY(-1)";
-        pw.appendChild(img);cell.appendChild(pw);
       }
+      // Always add click listener
       cell.addEventListener("click",()=>onCellClick(r,c));
       el.appendChild(cell);
     }
@@ -810,3 +885,4 @@ function addLog(msg){const el=document.getElementById("log");el.innerHTML+="<div
 </script>
 </body>
 </html>
+
